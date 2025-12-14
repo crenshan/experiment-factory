@@ -1,5 +1,6 @@
 import { createSchema } from "graphql-yoga";
 import type { SchemaContext } from "./types";
+
 import {
   createExperiment,
   getExperiment,
@@ -8,7 +9,10 @@ import {
   type ExperimentStatus,
   type Variant
 } from "@/server/data/experiments";
+
 import { getOrCreateAssignment } from "../data/assignments";
+import { logEvent, type EventType } from "../data/events";
+import { getExperimentMetrics } from "../data/metrics";
 
 const parseAllowList = (value: string | undefined) => {
   return (value ?? '')
@@ -34,6 +38,12 @@ export const schema = createSchema<SchemaContext>({
       DRAFT
       RUNNING
       PAUSED
+    }
+
+    enum EventType {
+      EXPOSURE
+      INTERACTION
+      CONVERSION
     }
 
     type Viewer {
@@ -65,6 +75,39 @@ export const schema = createSchema<SchemaContext>({
       assignedAt: String!
     }
 
+    type Event {
+      id: ID!
+      experimentId: ID!
+      userKey: ID!
+      variantId: ID!
+      variantName: String!
+      type: EventType!
+      name: String!
+      idempotencyKey: String
+      createdAt: String!
+    }
+
+    type VariantMetrics {
+      variantId: ID!
+      variantName: String!
+      exposures: Int!
+      conversions: Int!
+      conversionRate: Float!
+    }
+
+    type TotalsMetrics {
+      exposures: Int!
+      conversions: Int!
+      conversionRate: Float!
+    }
+
+    type ExperimentMetrics {
+      experimentId: ID!
+      generatedAt: String!
+      variants: [VariantMetrics!]!
+      totals: TotalsMetrics!
+    }
+
     input VariantInput {
       id: ID!
       name: String!
@@ -83,6 +126,14 @@ export const schema = createSchema<SchemaContext>({
       variants: [VariantInput!]
     }
 
+    input LogEventInput {
+      experimentId: ID!
+      variantId: ID!
+      type: EventType!
+      name: String!
+      idempotencyKey: String
+    }
+
     type Query {
       me: Viewer
 
@@ -90,12 +141,16 @@ export const schema = createSchema<SchemaContext>({
       experiment(id: ID!): Experiment
 
       getAssignment(experimentId: ID!): Assignment!
+
+      experimentMetrics(experimentId: ID!): ExperimentMetrics!
     }
 
     type Mutation {
       createExperiment(input: CreateExperimentInput!): Experiment!
       updateExperiment(id: ID!, patch: UpdateExperimentPatch!): Experiment!
       setExperimentStatus(id: ID!, status: ExperimentStatus!): Experiment!
+
+      logEvent(input: LogEventInput!): Event!
     }
   `,
   resolvers: {
@@ -123,6 +178,11 @@ export const schema = createSchema<SchemaContext>({
         });
 
         return assignment;
+      },
+
+      experimentMetrics: async (_parent, args: { experimentId: string }, ctx) => {
+        requireAdmin(ctx);
+        return getExperimentMetrics(args.experimentId);
       }
     },
 
@@ -156,6 +216,30 @@ export const schema = createSchema<SchemaContext>({
       ) => {
         requireAdmin(ctx);
         return  updateExperiment(args.id, { status: args.status });
+      },
+
+      logEvent: async (
+        _parent,
+        args: { input: { experimentId: string; variantId: string; type: EventType; name: string; idempotencyKey?: string } },
+        ctx
+      ) => {
+        if (!ctx.userKey) throw new Error('Missing user identity. Sign in or enable cookies.');
+
+        const exp = await getExperiment(args.input.experimentId);
+        if (!exp) throw new Error('Experiment not found');
+
+        const variant = exp.variants.find((v) => v.id === args.input.variantId);
+        if (!variant) throw new Error('Variant not found for experiment');
+
+        return logEvent({
+          experimentId: args.input.experimentId,
+          userKey: ctx.userKey,
+          variantId: variant.id,
+          variantName: variant.name,
+          type: args.input.type,
+          name: args.input.name,
+          idempotencyKey: args.input.idempotencyKey ?? null,
+        });
       },
     },
   }

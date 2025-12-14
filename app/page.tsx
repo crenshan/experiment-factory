@@ -1,7 +1,14 @@
 import Link from "next/link";
 import { ui } from "@/lib/ui";
+import { fetchGraphQL } from "@/lib/graphql/fetchGraphQL";
 
-export default function HomePage() {
+type Experiment = {
+  id: string;
+  name: string;
+  status: "DRAFT" | "RUNNING" | "ARCHIVED";
+};
+
+export default async function HomePage() {
   return (
     <main className={ui.page}>
       <div className={ui.card}>
@@ -11,9 +18,6 @@ export default function HomePage() {
         </p>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          <Link className={`${ui.button.secondary} text-center`} href="/health">
-            Health check
-          </Link>
           <Link className={`${ui.button.secondary} text-center`} href="/admin">
             Admin
           </Link>

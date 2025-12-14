@@ -171,6 +171,10 @@ export default function EditExperimentClient({ experimentId }: { experimentId: s
 
           <div className="flex-1" />
 
+          <Link className={ui.link} href={`/admin/experiments/${experimentId}/metrics`}>
+            Metrics
+          </Link>
+
           <Link className={ui.link} href="/admin/experiments">
             Back
           </Link>
