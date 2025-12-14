@@ -8,6 +8,7 @@ import {
   type ExperimentStatus,
   type Variant
 } from "@/server/data/experiments";
+import { getOrCreateAssignment } from "../data/assignments";
 
 const parseAllowList = (value: string | undefined) => {
   return (value ?? '')
@@ -57,6 +58,13 @@ export const schema = createSchema<SchemaContext>({
       createdByEmail: String
     }
 
+    type Assignment {
+      experimentId: ID!
+      userKey: ID!
+      variant: Variant!
+      assignedAt: String!
+    }
+
     input VariantInput {
       id: ID!
       name: String!
@@ -81,6 +89,8 @@ export const schema = createSchema<SchemaContext>({
 
       experiments: [Experiment!]!
       experiment(id: ID!): Experiment
+
+      getAssignment(experimentId: ID!): Assignment!
     }
 
     type Mutation {
@@ -103,6 +113,19 @@ export const schema = createSchema<SchemaContext>({
       experiment: async (_parent, args: { id: string }, ctx) => {
         requireAdmin(ctx);
         return getExperiment(args.id);
+      },
+
+      getAssignment: async (_parent, args: { experimentId: string }, ctx) => {
+        if (!ctx.userKey) {
+          throw new Error('Missing user identity. Sign in or enable cookies.');
+        }
+
+        const assignment = await getOrCreateAssignment({
+          experimentId: args.experimentId,
+          userKey: ctx.userKey
+        });
+
+        return assignment;
       }
     },
 

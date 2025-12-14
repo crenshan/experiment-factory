@@ -12,6 +12,7 @@ export async function fetchGraphQL<TData, TVars extends Record<string, unknown> 
 }) {
   const res = await fetch('/api/graphql', {
     method: 'POST',
+    credentials: 'same-origin',
     headers: {
       'content-type': 'application/json',
       ...(token ? { authorization: `Bearer ${token}` } : {})

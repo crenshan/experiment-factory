@@ -9,6 +9,9 @@ export type Viewer = {
 
 export type GraphQLContext = {
   viewer: Viewer | null;
+
+  // uid if signed in, else anon cookie
+  userKey: string | null;
 };
 
 export type SchemaContext = NextContext & GraphQLContext;

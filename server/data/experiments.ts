@@ -34,7 +34,15 @@ const docToExperiment = (id: string, data: FirebaseFirestore.DocumentData): Expe
   id,
   name: String(data.name ?? ''),
   status: (data.status ?? 'DRAFT') as ExperimentStatus,
-  variants: Array.isArray(data.variants) ? data.variants : [],
+  variants: Array.isArray(data.variants)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ? data.variants.map((v: any, idx: number) => ({
+      id: String(v?.id ?? String.fromCharCode(65 + idx)),
+      name: String(v?.name ?? `Variant ${String.fromCharCode(65 + idx)}`),
+      weight: Number.isFinite(Number(v?.weight)) ? Math.trunc(Number(v.weight)) : 0,
+      journeyId: (v?.journeyId ?? null) as string | null,
+    }))
+  : [],
   createdAt: toIso(data.createdAt),
   updatedAt: toIso(data.updatedAt),
   createdByEmail: (data.createdByEmail ?? null) as string | null

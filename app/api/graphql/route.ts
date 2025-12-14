@@ -5,6 +5,20 @@ import { adminAuth } from "@/lib/firebase/admin";
 
 export const runtime = "nodejs";
 
+const getCookie = (cookieHeader: string | null, name: string): string | null => {
+  if (!cookieHeader) return null;
+
+  const parts = cookieHeader.split(';').map(p => p.trim());
+
+  for (const part of parts) {
+    if (!part.startsWith(`${name}=`)) continue;
+    const value = part.slice(name.length + 1);
+    return value ? decodeURIComponent(value) : null;
+  }
+
+  return null;
+}
+
 async function getViewerFromRequest(request: Request): Promise<GraphQLContext["viewer"]> {
   const authHeader = request.headers.get("authorization");
 
@@ -34,7 +48,11 @@ const { handleRequest } = createYoga<NextContext>({
   fetchAPI: { Request, Response },
   context: async ({ request }) => {
     const viewer = await getViewerFromRequest(request);
-    return { viewer };
+
+    const anon = getCookie(request.headers.get('cookie'), 'ef_anon');
+    const userKey = viewer?.uid ?? anon ?? null
+
+    return { viewer, userKey };
   },
 });
 
