@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+
 import { useAuth } from "@/app/providers";
 import { fetchGraphQL } from "@/lib/graphql/fetchGraphQL";
+import { ui } from "@/lib/ui";
 
 type Experiment = {
   id: string;
@@ -21,6 +24,11 @@ export default function EditExperimentClient({ experimentId }: { experimentId: s
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const isDirty = useMemo(() => {
+    if (!exp) return false;
+    return name.trim() !== exp.name || status !== exp.status;
+  }, [exp, name, status]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -29,7 +37,11 @@ export default function EditExperimentClient({ experimentId }: { experimentId: s
         setLoading(true);
         setError("");
 
-        if (!user) return;
+        if (!user) {
+          setExp(null);
+          setError("Not signed in");
+          return;
+        }
 
         const token = await user.getIdToken();
         const data = await fetchGraphQL<{ experiment: Experiment | null }, { id: string }>({
@@ -78,8 +90,14 @@ export default function EditExperimentClient({ experimentId }: { experimentId: s
 
       if (!user) throw new Error("Not signed in");
 
+      const nextName = name.trim();
+      if (nextName.length < 3) throw new Error("Name must be at least 3 characters");
+
       const token = await user.getIdToken();
-      const data = await fetchGraphQL<{ updateExperiment: Experiment }, { id: string; patch: { name: string; status: Experiment["status"] } }>({
+      const data = await fetchGraphQL<
+        { updateExperiment: Experiment },
+        { id: string; patch: { name: string; status: Experiment["status"] } }
+      >({
         token,
         query: /* GraphQL */ `
           mutation UpdateExperiment($id: ID!, $patch: UpdateExperimentPatch!) {
@@ -91,10 +109,12 @@ export default function EditExperimentClient({ experimentId }: { experimentId: s
             }
           }
         `,
-        variables: { id: experimentId, patch: { name: name.trim(), status } },
+        variables: { id: experimentId, patch: { name: nextName, status } },
       });
 
       setExp(data.updateExperiment);
+      setName(data.updateExperiment.name);
+      setStatus(data.updateExperiment.status);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to save experiment");
     } finally {
@@ -102,23 +122,36 @@ export default function EditExperimentClient({ experimentId }: { experimentId: s
     }
   };
 
+  const handleReset = () => {
+    if (!exp) return;
+    setName(exp.name);
+    setStatus(exp.status);
+    setError("");
+  };
+
   if (loading) {
     return (
-      <main style={{ padding: 24, fontFamily: "system-ui, sans-serif" }}>
-        <h1>Edit experiment</h1>
-        <p>Loading…</p>
+      <main className={ui.page}>
+        <div className={ui.card}>
+          <h1 className={ui.h1}>Edit experiment</h1>
+          <p className={ui.p}>Loading…</p>
+        </div>
       </main>
     );
   }
 
   if (error) {
     return (
-      <main style={{ padding: 24, fontFamily: "system-ui, sans-serif" }}>
-        <h1>Edit experiment</h1>
-        <p style={{ color: "crimson" }}>{error}</p>
-        <p>
-          <a href="/admin/experiments">Back to list</a>
-        </p>
+      <main className={ui.page}>
+        <div className={ui.card}>
+          <h1 className={ui.h1}>Edit experiment</h1>
+          <p className={ui.error}>{error}</p>
+          <div className="mt-4">
+            <Link className={ui.link} href="/admin/experiments">
+              Back to experiments
+            </Link>
+          </div>
+        </div>
       </main>
     );
   }
@@ -126,47 +159,94 @@ export default function EditExperimentClient({ experimentId }: { experimentId: s
   if (!exp) return null;
 
   return (
-    <main style={{ padding: 24, fontFamily: "system-ui, sans-serif", maxWidth: 720 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <h1 style={{ margin: 0 }}>Edit experiment</h1>
-        <span style={{ flex: 1 }} />
-        <a href="/admin/experiments">Back</a>
-      </div>
+    <main className={ui.page}>
+      <div className={ui.card}>
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className={ui.h1}>Edit experiment</h1>
+            <p className="mt-2 text-sm text-zinc-600">
+              Update the name and status. Variants/journeys come next.
+            </p>
+          </div>
 
-      <p style={{ color: "#555" }}>
-        ID: <code>{exp.id}</code>
-      </p>
+          <div className="flex-1" />
 
-      <label style={{ display: "block", marginBottom: 12 }}>
-        Name
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          style={{ display: "block", width: "100%", padding: 8, marginTop: 6 }}
-        />
-      </label>
+          <Link className={ui.link} href="/admin/experiments">
+            Back
+          </Link>
+        </div>
 
-      <label style={{ display: "block", marginBottom: 12 }}>
-        Status
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value as Experiment["status"])}
-          style={{ display: "block", width: "100%", padding: 8, marginTop: 6 }}
-        >
-          <option value="DRAFT">DRAFT</option>
-          <option value="RUNNING">RUNNING</option>
-          <option value="PAUSED">PAUSED</option>
-        </select>
-      </label>
+        <div className="mt-6 grid gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <label className="block text-sm font-medium text-zinc-800">
+              Name
+              <input
+                className={ui.input}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </label>
 
-      <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-        <button type="button" onClick={handleSave} disabled={saving || name.trim().length < 3}>
-          {saving ? "Saving…" : "Save"}
-        </button>
+            <label className="mt-4 block text-sm font-medium text-zinc-800">
+              Status
+              <select
+                className={ui.select}
+                value={status}
+                onChange={(e) => setStatus(e.target.value as Experiment["status"])}
+              >
+                <option value="DRAFT">DRAFT</option>
+                <option value="RUNNING">RUNNING</option>
+                <option value="PAUSED">PAUSED</option>
+              </select>
+            </label>
 
-        <span style={{ color: "#666" }}>
-          Last updated: {new Date(exp.updatedAt).toLocaleString()}
-        </span>
+            {error ? <p className={`mt-3 ${ui.error}`}>{error}</p> : null}
+
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                className={ui.button.primary}
+                onClick={handleSave}
+                disabled={saving || name.trim().length < 3 || !isDirty}
+              >
+                {saving ? "Saving…" : "Save changes"}
+              </button>
+
+              <button
+                type="button"
+                className={ui.button.secondary}
+                onClick={handleReset}
+                disabled={saving || !isDirty}
+              >
+                Reset
+              </button>
+
+              <span className="text-xs text-zinc-500">
+                Last updated: {new Date(exp.updatedAt).toLocaleString()}
+              </span>
+            </div>
+          </div>
+
+          <aside className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+            <h2 className="text-sm font-semibold text-zinc-900">Details</h2>
+
+            <dl className="mt-3 grid gap-2 text-sm">
+              <div className="flex gap-2">
+                <dt className="w-24 font-medium text-zinc-800">ID</dt>
+                <dd className="font-mono text-xs text-zinc-700">{exp.id}</dd>
+              </div>
+              <div className="flex gap-2">
+                <dt className="w-24 font-medium text-zinc-800">Status</dt>
+                <dd className="text-zinc-700">{exp.status}</dd>
+              </div>
+            </dl>
+
+            <p className="mt-4 text-xs text-zinc-600">
+              Next we’ll add deterministic bucketing and an assignment endpoint so your runner can
+              pick the correct variant per user.
+            </p>
+          </aside>
+        </div>
       </div>
     </main>
   );

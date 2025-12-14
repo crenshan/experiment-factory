@@ -1,8 +1,9 @@
 "use client";
 
 import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
-import {auth} from '../../lib/firebase/client'
-import { useAuth } from "../providers";
+import { auth } from "@/lib/firebase/client";
+import { useAuth } from "@/app/providers";
+import { ui } from "@/lib/ui";
 
 export default function AuthButtons() {
   const { user, loading } = useAuth();
@@ -16,23 +17,22 @@ export default function AuthButtons() {
     await signOut(auth);
   };
 
-  if (loading) return (<span>Loading...</span>);
+  if (loading) return <span className="text-sm text-zinc-600">Loading…</span>;
 
   if (!user) {
     return (
-      <button type='button' onClick={handleSignIn}>
+      <button type="button" className={ui.button.primary} onClick={handleSignIn}>
         Sign in with Google
       </button>
-    )
+    );
   }
 
   return (
-    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-      <span>{user.email ?? "Signed in"}</span>
-
-      <button type='button' onClick={handleSignOut}>
+    <div className="flex items-center gap-3">
+      <span className="text-sm text-zinc-700">{user.email ?? "Signed in"}</span>
+      <button type="button" className={ui.button.secondary} onClick={handleSignOut}>
         Sign out
       </button>
     </div>
-  )
+  );
 }

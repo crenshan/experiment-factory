@@ -1,34 +1,38 @@
-'use client';
+"use client";
 
-import { PropsWithChildren, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from '../providers'
+import { useAuth } from "@/app/providers";
+import { ui } from "@/lib/ui";
 
-export default function AdminLayout({ children }: PropsWithChildren) {
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { user, loading, isAdmin } = useAuth();
 
   useEffect(() => {
     if (!loading && (!user || !isAdmin)) {
-      router.replace('/')
+      router.replace("/");
     }
-  }, [isAdmin, loading, router, user]);
-
+  }, [loading, user, isAdmin, router]);
 
   if (loading) {
     return (
-      <main style={{ padding: 24 }}>
-        <h1>Admin</h1>
-        <p>Loading…</p>
+      <main className={ui.page}>
+        <div className={ui.card}>
+          <h1 className={ui.h1}>Admin</h1>
+          <p className={ui.p}>Loading…</p>
+        </div>
       </main>
     );
   }
 
   if (!user || !isAdmin) {
     return (
-      <main style={{ padding: 24 }}>
-        <h1>Admin</h1>
-        <p>Redirecting…</p>
+      <main className={ui.page}>
+        <div className={ui.card}>
+          <h1 className={ui.h1}>Admin</h1>
+          <p className={ui.p}>Redirecting…</p>
+        </div>
       </main>
     );
   }
