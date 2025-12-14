@@ -55,9 +55,6 @@ export default function NewExperimentPage() {
         <div className="flex items-center gap-3">
           <div>
             <h1 className={ui.h1}>New experiment</h1>
-            <p className="mt-2 text-sm text-zinc-600">
-              Start with a simple experiment name. We’ll wire variants/journeys later.
-            </p>
           </div>
 
           <div className="flex-1" />

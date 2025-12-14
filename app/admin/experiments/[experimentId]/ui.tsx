@@ -244,11 +244,6 @@ export default function EditExperimentClient({ experimentId }: { experimentId: s
                 <dd className="text-zinc-700">{exp.status}</dd>
               </div>
             </dl>
-
-            <p className="mt-4 text-xs text-zinc-600">
-              Next we’ll add deterministic bucketing and an assignment endpoint so your runner can
-              pick the correct variant per user.
-            </p>
           </aside>
         </div>
       </div>

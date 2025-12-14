@@ -140,6 +140,8 @@ export const schema = createSchema<SchemaContext>({
       experiments: [Experiment!]!
       experiment(id: ID!): Experiment
 
+      activeExperiments: [Experiment!]!
+
       getAssignment(experimentId: ID!): Assignment!
 
       experimentMetrics(experimentId: ID!): ExperimentMetrics!
@@ -165,6 +167,11 @@ export const schema = createSchema<SchemaContext>({
       experiment: async (_parent, args: { id: string }, ctx) => {
         requireAdmin(ctx);
         return getExperiment(args.id);
+      },
+
+      activeExperiments: async () => {
+        const all = await listExperiments();
+        return all.filter(exp => exp.status === "RUNNING");
       },
 
       getAssignment: async (_parent, args: { experimentId: string }, ctx) => {

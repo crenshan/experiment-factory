@@ -1,18 +1,12 @@
 import Link from "next/link";
 import { ui } from "@/lib/ui";
-import { fetchGraphQL } from "@/lib/graphql/fetchGraphQL";
 
-type Experiment = {
-  id: string;
-  name: string;
-  status: "DRAFT" | "RUNNING" | "ARCHIVED";
-};
-
-export default async function HomePage() {
+export default function HomePage() {
   return (
     <main className={ui.page}>
       <div className={ui.card}>
         <h1 className={ui.h1}>Experiment Factory</h1>
+
         <p className="mt-2 text-sm text-zinc-600">
           A Next.js + Firebase prototyping platform with deterministic A/B assignment and event logging.
         </p>
@@ -21,7 +15,8 @@ export default async function HomePage() {
           <Link className={`${ui.button.secondary} text-center`} href="/admin">
             Admin
           </Link>
-          <Link className={`${ui.button.secondary} text-center`} href="/run/demo">
+
+          <Link className={`${ui.button.secondary} text-center`} href="/run">
             Runner
           </Link>
         </div>
