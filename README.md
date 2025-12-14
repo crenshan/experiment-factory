@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+
+# Experiment Factory
+
+A lightweight **Next.js** + **GraphQL** prototyping platform for managing and running experiments. This project demonstrates deterministic A/B assignment, event logging, and role-based access control in a modern React + TypeScript stack.
+
+## Features
+
+* **Next.js 13 App Router** – Fully server/client components with optimized routing
+* **GraphQL API** – Queries and mutations for experiments, assignments, and events
+* **Firebase Authentication** – User sign-in and role-based authorization (admin vs. non-admin)
+* **Experiment Management** – Create, update, and track experiments with multiple variants
+* **Deterministic Assignments** – Users are consistently assigned variants
+* **Event Logging** – Track exposure, interaction, and conversion events
+* **Tailwind CSS** – Utility-first styling for rapid UI development
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+* Node.js >= 20
+* npm or yarn
+* Firebase project with Authentication enabled
+
+### Install
+
+```bash
+npm install
+# or
+yarn install
+```
+
+### Environment Variables
+
+Create a `.env.local` file:
+
+```env
+NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=project_id
+NEXT_PUBLIC_FIREBASE_APP_ID=project_app_id
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=message_sender_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=storage_bucket
+
+NEXT_PUBLIC_ADMIN_EMAIL_ALLOWLIST=you@example.com
+
+FIREBASE_ADMIN_PROJECT_ID=project_id
+FIREBASE_ADMIN_PRIVATE_KEY=private_key
+FIREBASE_ADMIN_CLIENT_EMAIL=admin@example.com
+
+ADMIN_EMAIL_ALLOWLIST=you@example.com,another@example.com
+```
+
+### Run
 
 ```bash
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to see the app in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+/app         # Next.js pages and layouts
+/lib         # Client-side utilities (GraphQL fetch, UI helpers)
+/server      # GraphQL schema, resolvers, and Firebase integration
+```
 
-## Learn More
+## Available Scripts
 
-To learn more about Next.js, take a look at the following resources:
+* `dev` – Runs the development server
+* `build` – Builds the project for production
+* `start` – Starts the production server
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Technologies Used
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+* Next.js 13
+* React + TypeScript
+* GraphQL (graphql-yoga)
+* Firebase Authentication
+* Tailwind CSS
 
-## Deploy on Vercel
+## License
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This project is open-source and free to use.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
