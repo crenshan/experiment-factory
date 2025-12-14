@@ -1,22 +1,142 @@
 import { createSchema } from "graphql-yoga";
 import type { SchemaContext } from "./types";
+import {
+  createExperiment,
+  getExperiment,
+  listExperiments,
+  updateExperiment,
+  type ExperimentStatus,
+  type Variant
+} from "@/server/data/experiments";
+
+const parseAllowList = (value: string | undefined) => {
+  return (value ?? '')
+    .split(',')
+    .map(s => s.trim().toLowerCase())
+    .filter(Boolean)
+}
+
+const ADMIN_ALLOWLIST = parseAllowList(
+  process.env.ADMIN_EMAIL_ALLOWLIST ?? process.env.NEXT_PUBLIC_ADMIN_EMAIL_ALLOWLIST
+)
+
+const requireAdmin = (ctx: SchemaContext) => {
+  const email = (ctx.viewer?.email ?? '').toLowerCase();
+  if (!email || !ADMIN_ALLOWLIST.includes(email)) {
+    throw new Error('Not authorized');
+  }
+}
 
 export const schema = createSchema<SchemaContext>({
-  typeDefs: `
+  typeDefs: /* GraphQL */ `
+    enum ExperimentStatus {
+      DRAFT
+      RUNNING
+      PAUSED
+    }
+
     type Viewer {
       uid: ID!
       email: String
     }
 
+    type Variant {
+      id: ID!
+      name: String!
+      weight: Int!
+      journeyId: ID
+    }
+
+    type Experiment {
+      id: ID!
+      name: String!
+      status: ExperimentStatus!
+      variants: [Variant!]!
+      createdAt: String!
+      updatedAt: String!
+      createdByEmail: String
+    }
+
+    input VariantInput {
+      id: ID!
+      name: String!
+      weight: Int!
+      journeyId: ID
+    }
+
+    input CreateExperimentInput {
+      name: String!
+      variants: [VariantInput!]
+    }
+
+    input UpdateExperimentPatch {
+      name: String
+      status: ExperimentStatus
+      variants: [VariantInput!]
+    }
+
     type Query {
       greetings: String!
       me: Viewer
+
+      experiments: [Experiment!]!
+      experiment(id: ID!): Experiment
+    }
+
+    type Mutation {
+      createExperiment(input: CreateExperimentInput!): Experiment!
+      updateExperiment(id: ID!, patch: UpdateExperimentPatch!): Experiment!
+      setExperimentStatus(id: ID!, status: ExperimentStatus!): Experiment!
     }
   `,
   resolvers: {
     Query: {
       greetings: () => "Hello from Yoga running inside Next.js.",
+
       me: (_parent, _args, ctx) => ctx.viewer,
+
+      experiments: async (_parent, _args, ctx) => {
+        requireAdmin(ctx);
+        return listExperiments();
+      },
+
+      experiment: async (_parent, args: { id: string }, ctx) => {
+        requireAdmin(ctx);
+        return getExperiment(args.id);
+      }
     },
-  },
+
+    Mutation: {
+      createExperiment: async (
+        _parent,
+        args: { input: { name: string; variants?: Variant[] } },
+        ctx
+      ) => {
+        requireAdmin(ctx);
+        return createExperiment({
+          name: args.input.name,
+          variants: args.input.variants,
+          createdByEmail: ctx.viewer?.email ?? null,
+        });
+      },
+
+      updateExperiment: async (
+        _parent,
+        args: { id: string; patch: { name?: string; status?: ExperimentStatus; variants?: Variant[] } },
+        ctx
+      ) => {
+        requireAdmin(ctx);
+        return  updateExperiment(args.id, args.patch);
+      },
+
+      setExperimentStatus: async (
+        _parent,
+        args: { id: string; status?: ExperimentStatus },
+        ctx
+      ) => {
+        requireAdmin(ctx);
+        return  updateExperiment(args.id, { status: args.status });
+      },
+    },
+  }
 });

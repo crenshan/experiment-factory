@@ -19,3 +19,5 @@ const app =
       });
 
 export const adminAuth = getAuth(app);
+
+export {app as adminApp};
