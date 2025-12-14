@@ -19,12 +19,16 @@ const getCookie = (cookieHeader: string | null, name: string): string | null => 
   return null;
 }
 
+
+/**
+ * Extract and verify a Firebase ID token from the Authorization header (if present)
+ */
 async function getViewerFromRequest(request: Request): Promise<GraphQLContext["viewer"]> {
   const authHeader = request.headers.get("authorization");
 
   if (!authHeader) return null;
 
-  // Accept either "Bearer <token>" or raw token (helps during debugging)
+  // Accept either "Bearer <token>" or raw token (debugging)
   const token = authHeader.startsWith("Bearer ")
     ? authHeader.slice("Bearer ".length).trim()
     : authHeader.trim();

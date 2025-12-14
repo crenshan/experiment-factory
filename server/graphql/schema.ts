@@ -84,7 +84,6 @@ export const schema = createSchema<SchemaContext>({
     }
 
     type Query {
-      greetings: String!
       me: Viewer
 
       experiments: [Experiment!]!
@@ -101,8 +100,6 @@ export const schema = createSchema<SchemaContext>({
   `,
   resolvers: {
     Query: {
-      greetings: () => "Hello from Yoga running inside Next.js.",
-
       me: (_parent, _args, ctx) => ctx.viewer,
 
       experiments: async (_parent, _args, ctx) => {
